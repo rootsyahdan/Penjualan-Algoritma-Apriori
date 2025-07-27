@@ -1,0 +1,153 @@
+/* ======================== */
+/* DATA BARANG STYLES       */
+/* ======================== */
+
+/* Search Container - Diperbaiki */
+.search-container {
+  display: flex;
+  gap: 12px;
+  margin: 25px 0;
+  align-items: stretch; /* Memastikan tinggi sama */
+}
+
+.search-container input {
+  flex: 1;
+  padding: 12px 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.3s;
+}
+
+.search-container input:focus {
+  outline: none;
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+}
+
+.search-btn {
+  padding: 0 30px; /* Lebar lebih besar */
+  font-size: 16px;
+  min-width: 120px;
+}
+
+/* ======================== */
+/* FORM CONTAINERS          */
+/* ======================== */
+.form-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px; /* Jarak lebih besar */
+  margin-bottom: 25px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px; /* Jarak lebih besar */
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.grid-full {
+  grid-column: 1 / -1;
+}
+
+/* Label styling */
+.form-group label {
+  margin-bottom: 10px;
+  font-weight: 600; /* Lebih tebal */
+  color: #333;
+  font-size: 15px;
+}
+
+/* Input styling */
+.form-group input {
+  padding: 14px 16px; /* Lebih besar */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.3s;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #fff;
+}
+
+.form-group input:focus {
+  border-color: #1a73e8;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+}
+
+.button-group {
+  display: flex;
+  gap: 15px; /* Jarak lebih besar */
+  margin-top: 20px;
+  flex-wrap: wrap; /* Untuk responsif */
+}
+
+/* ======================== */
+/* RESPONSIVE DESIGN        */
+/* ======================== */
+
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .search-container {
+    flex-direction: column;
+  }
+
+  .search-btn {
+    width: 100%;
+    padding: 12px;
+    margin-top: 5px;
+  }
+
+  .button-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .button-group .button {
+    width: 100%;
+  }
+}
+
+/* PAGINATION STYLES */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.pagination .button {
+  min-width: 40px;
+  padding: 10px 15px;
+  text-align: center;
+}
+
+.pagination-dots {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+}
+
+/* Responsive pagination */
+@media (max-width: 768px) {
+  .pagination {
+    gap: 5px;
+  }
+
+  .pagination .button {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+}
