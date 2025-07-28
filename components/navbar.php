@@ -14,8 +14,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
         <li class="nav-item <?= ($current_page == 'transaksi.php') ? 'active' : '' ?>">
             <a href="transaksi.php">Transaksi</a>
         </li>
-        <li class="nav-item">
-            <a href="#">Proses Apriori</a>
+        <li class="nav-item <?= ($current_page == 'proses_apriori.php') ? 'active' : '' ?>">
+            <a href="proses_apriori.php">Proses Apriori</a>
         </li>
     </ul>
 </nav>
