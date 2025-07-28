@@ -2,7 +2,7 @@
 $current_page = basename($_SERVER['PHP_SELF']);
 ?>
 
-<nav class="sidenav">
+<nav class="sidenav no-print">
     <div class="sidenav-logo">LOGO</div>
     <ul class="nav-menu">
         <li class="nav-item <?= ($current_page == 'dashboard.php') ? 'active' : '' ?>">

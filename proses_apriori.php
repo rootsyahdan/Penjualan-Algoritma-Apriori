@@ -243,6 +243,7 @@ function getLiftKeterangan($lift)
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/proses_apriori.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
 </head>
 
 <body>
@@ -256,7 +257,7 @@ function getLiftKeterangan($lift)
         <?php endif; ?>
 
         <!-- Form Parameter Apriori -->
-        <form method="POST" class="form-container">
+        <form method="POST" class="form-container no-print">
             <h3>Parameter Proses Apriori</h3>
 
             <div class="form-row">
@@ -285,15 +286,25 @@ function getLiftKeterangan($lift)
                 </div>
             </div>
 
-            <div class="button-group grid-full">
+            <div class="button-group grid-full no-print">
                 <button type="submit" name="proses_apriori" class="button button-primary">
                     <i class="fas fa-cogs"></i> Proses Apriori
                 </button>
+
+                <button class="button button-primary" onclick="window.print()">
+                    <i class="fas fa-print"></i> Cetak Hasil
+                </button>
             </div>
+
+
         </form>
+
+
 
         <?php if (!empty($log)): ?>
             <!-- Keterangan Proses -->
+
+
             <div class="keterangan-proses">
                 <h3>Keterangan Proses</h3>
                 <p>Rentang Tanggal: <?= date('d M Y', strtotime($log['tanggal_awal'])) ?> - <?= date('d M Y', strtotime($log['tanggal_akhir'])) ?></p>

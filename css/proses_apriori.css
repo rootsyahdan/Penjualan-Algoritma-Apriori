@@ -273,3 +273,70 @@ h1 {
     overflow-x: auto;
   }
 }
+
+/* PRINT BUTTON */
+.print-button-container {
+  text-align: right;
+  margin: 20px 0;
+}
+
+/* PRINT STYLES */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+    padding: 0 !important;
+    font-size: 10pt;
+  }
+
+  .main-content {
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+  }
+
+  .sidenav {
+    display: none !important;
+  }
+
+  .form-container,
+  .button-group {
+    display: none;
+  }
+
+  .data-table {
+    box-shadow: none;
+    border: 1px solid #ddd;
+    font-size: 9pt;
+  }
+
+  .section-title {
+    page-break-inside: avoid;
+  }
+
+  .kesimpulan {
+    page-break-before: always;
+  }
+
+  .lolos {
+    background-color: #e8f5e9 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .tidak-lolos {
+    background-color: #ffebee !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  h1,
+  h2,
+  h3 {
+    color: #000 !important;
+  }
+}
