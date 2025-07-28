@@ -93,9 +93,13 @@ $barang = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+    <link rel="manifest" href="images/site.webmanifest">
     <title>Data Barang</title>
     <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/transaksi.css"> <!-- Ganti dengan transaksi.css -->
+    <link rel="stylesheet" href="css/transaksi.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         /* Tambahkan style khusus untuk tombol edit */
@@ -112,8 +116,9 @@ $barang = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </head>
 
 <body>
+
     <div class="main-content">
-        <h1>Data Barang</h1>
+        <h1 class="fas fa-box"> Data Barang</h1>
 
         <?php if ($message): ?>
             <div class="alert <?= strpos($message, 'berhasil') !== false ? 'alert-success' : 'alert-danger' ?>">

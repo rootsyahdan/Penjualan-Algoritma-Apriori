@@ -149,7 +149,8 @@ $barang = $pdo->query("SELECT * FROM barang")->fetchAll(PDO::FETCH_ASSOC);
 
 <body>
     <div class="main-content">
-        <h1>Data Transaksi</h1>
+        <h1 class="fas fa-shopping-cart"> Data Transaksi</h1>
+
 
         <?php if ($message): ?>
             <div class="alert <?= strpos($message, 'berhasil') !== false ? 'alert-success' : 'alert-danger' ?>">

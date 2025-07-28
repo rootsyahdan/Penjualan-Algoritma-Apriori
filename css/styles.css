@@ -3,7 +3,11 @@
   --secondary-color: #f8f9fa;
   --success-color: #28a745;
   --danger-color: #dc3545;
+  --warning-color: #ffc107;
+  --info-color: #17a2b8;
   --text-color: #333;
+  --light-gray: #f5f7fa;
+  --border-color: #e0e6ed;
 }
 
 * {
@@ -14,9 +18,10 @@
 }
 
 body {
-  background-color: #f0f2f5;
+  background-color: var(--light-gray);
   display: flex;
   min-height: 100vh;
+  color: var(--text-color);
 }
 
 .sidenav {
@@ -26,10 +31,10 @@ body {
   padding: 20px;
   position: fixed;
   height: 100%;
+  z-index: 1000;
 }
 
 /* ... (Lanjutkan dengan style lainnya) ... */
-
 .nav-item {
   padding: 12px;
   margin: 8px 0;
@@ -52,8 +57,20 @@ body {
   background: #1557b0;
 }
 
-.main-content {
-  flex: 1;
-  margin-left: 250px;
-  padding: 30px;
+.mobile-menu-toggle {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .sidenav {
+    width: 100%;
+    height: auto;
+    position: relative;
+    padding: 10px;
+  }
+
+  .nav-item {
+    display: inline-block;
+    margin: 5px;
+  }
 }
