@@ -50,11 +50,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['proses_apriori'])) {
 
         // Langkah 2: Hitung itemset1 (frekuensi per barang)
         $stmt = $pdo->prepare("SELECT b.id_barang, COUNT(*) as frekuensi
-                               FROM detail_transaksi dt
-                               JOIN transaksi t ON dt.id_transaksi = t.id_transaksi
-                               JOIN barang b ON dt.id_barang = b.id_barang
-                               WHERE t.tanggal_transaksi BETWEEN ? AND ?
-                               GROUP BY b.id_barang");
+                       FROM detail_transaksi dt
+                       JOIN transaksi t ON dt.id_transaksi = t.id_transaksi
+                       JOIN barang b ON dt.id_barang = b.id_barang
+                       WHERE t.tanggal_transaksi BETWEEN ? AND ?
+                       GROUP BY b.id_barang
+                       ORDER BY frekuensi DESC"); // <-- TAMBAHKAN ORDER BY
         $stmt->execute([$tanggal_awal, $tanggal_akhir]);
 
         // Simpan hasil itemset1
@@ -76,6 +77,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['proses_apriori'])) {
                 $barang_lolos[] = $item['item'];
             }
         }
+
+        // Urutkan itemset2 berdasarkan frekuensi DESC
+        usort($itemset2, function ($a, $b) {
+            return $b['frekuensi'] - $a['frekuensi'];
+        });
+
 
         // Generate kombinasi pasangan barang
         $n = count($barang_lolos);
@@ -120,6 +127,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['proses_apriori'])) {
                     break;
                 }
             }
+
+            // Urutkan confidence berdasarkan confidence DESC
+            usort($confidence, function ($a, $b) {
+                return $b['confidence'] <=> $a['confidence'];
+            });
+
+            // Urutkan lift berdasarkan lift DESC
+            usort($lift, function ($a, $b) {
+                return $b['lift'] <=> $a['lift'];
+            });
 
             // Cari frekuensi item2
             $frekuensi_item2 = 0;
@@ -434,23 +451,63 @@ function getLiftKeterangan($lift)
                 </tbody>
             </table>
 
-            <!-- Kesimpulan -->
             <div class="kesimpulan">
                 <h3>Kesimpulan</h3>
-                <?php if (!empty($lift)): ?>
-                    <p>Berdasarkan analisis Apriori, ditemukan beberapa aturan asosiasi yang signifikan:</p>
+                <?php
+                // Filter hanya aturan yang lolos confidence dan lift > 1
+                $signifikan_rules = [];
+                foreach ($confidence as $conf) {
+                    if ($conf['lolos'] == 'Lolos') {
+                        // Cari lift yang sesuai
+                        foreach ($lift as $l) {
+                            if (
+                                $l['antecedent'] === $conf['antecedent'] &&
+                                $l['consequent'] === $conf['consequent']
+                            ) {
+                                if ($l['lift'] > 1) {
+                                    $signifikan_rules[] = [
+                                        'rule' => "Jika membeli {$conf['antecedent']} maka membeli {$conf['consequent']}",
+                                        'confidence' => $conf['confidence'],
+                                        'lift' => $l['lift'],
+                                        'keterangan' => $l['keterangan']
+                                    ];
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Urutkan berdasarkan confidence tertinggi
+                usort($signifikan_rules, function ($a, $b) {
+                    return $b['confidence'] <=> $a['confidence'];
+                });
+                ?>
+
+                <?php if (!empty($signifikan_rules)): ?>
+                    <p>Aturan asosiasi signifikan (confidence ≥ <?= $min_confidence ?>% dan lift > 1):</p>
                     <ul>
-                        <?php foreach ($lift as $l): ?>
+                        <?php foreach ($signifikan_rules as $rule): ?>
                             <li>
-                                Pembelian <strong><?= $l['antecedent'] ?></strong>
-                                <?= $l['keterangan'] ?> kemungkinan pembelian
-                                <strong><?= $l['consequent'] ?></strong>
-                                (Lift: <?= $l['lift'] ?>)
+                                <?= $rule['rule'] ?>
+                                <ul>
+                                    <li>Confidence: <?= $rule['confidence'] ?>%</li>
+                                    <li>Lift Ratio: <?= $rule['lift'] ?> (<?= $rule['keterangan'] ?>)</li>
+                                </ul>
                             </li>
                         <?php endforeach; ?>
                     </ul>
+                    <p><strong>Interpretasi:</strong> Semakin tinggi nilai confidence, semakin kuat hubungan antar barang.
+                        Lift > 1 menunjukkan hubungan positif (pembelian barang A meningkatkan kemungkinan pembelian barang B).</p>
                 <?php else: ?>
                     <p>Tidak ditemukan aturan asosiasi yang signifikan berdasarkan parameter yang ditentukan.</p>
+                    <p>Mungkin disebabkan oleh:
+                    <ul>
+                        <li>Min. confidence terlalu tinggi</li>
+                        <li>Min. support terlalu tinggi</li>
+                        <li>Data transaksi terlalu sedikit</li>
+                    </ul>
+                    </p>
                 <?php endif; ?>
             </div>
         <?php endif; ?>
