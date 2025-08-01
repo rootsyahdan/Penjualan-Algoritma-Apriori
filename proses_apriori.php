@@ -115,97 +115,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['proses_apriori'])) {
             }
         }
 
-        // Langkah 4: Hitung confidence
+        // Langkah 4: Hitung confidence & lift (satu arah saja A->B)
         foreach ($itemset2 as $pair) {
             if ($pair['lolos'] != 'Lolos') continue;
 
-            // Cari frekuensi item1
-            $frekuensi_item1 = 0;
-            foreach ($itemset1 as $item) {
-                if ($item['item'] == $pair['item1']) {
-                    $frekuensi_item1 = $item['frekuensi'];
-                    break;
-                }
-            }
-
-            // Urutkan confidence berdasarkan confidence DESC
-            usort($confidence, function ($a, $b) {
-                return $b['confidence'] <=> $a['confidence'];
-            });
-
-            // Urutkan lift berdasarkan lift DESC
-            usort($lift, function ($a, $b) {
-                return $b['lift'] <=> $a['lift'];
-            });
-
-            // Cari frekuensi item2
-            $frekuensi_item2 = 0;
-            foreach ($itemset1 as $item) {
-                if ($item['item'] == $pair['item2']) {
-                    $frekuensi_item2 = $item['frekuensi'];
-                    break;
-                }
-            }
+            // Cari frekuensi item1 dan item2 di itemset1
+            $freq = array_column($itemset1, 'frekuensi', 'item');
+            $f1 = $freq[$pair['item1']] ?? 0;
+            $f2 = $freq[$pair['item2']] ?? 0;
 
             // Confidence A->B
-            // Confidence A->B
-            $conf_ab = ($frekuensi_item1 > 0)
-                ? round(($pair['frekuensi'] / $frekuensi_item1) * 100, 2)
+            $conf_ab = $f1 > 0
+                ? round(($pair['frekuensi'] / $f1) * 100, 2)
                 : 0;
-
-            $supportB = ($total_transaksi > 0)
-                ? ($frekuensi_item2 / $total_transaksi) * 100
+            $supportB = $total_transaksi > 0
+                ? ($f2 / $total_transaksi) * 100
                 : 0;
-
-            $lift_ab = ($supportB > 0)
+            $lift_ab = $supportB > 0
                 ? round($conf_ab / $supportB, 2)
                 : 0;
 
+            // Simpan confidence A->B
             $confidence[] = [
                 'antecedent' => $pair['item1'],
                 'consequent' => $pair['item2'],
-                'support' => $pair['support'],
+                'support'    => $pair['support'],
                 'confidence' => $conf_ab,
-                'lolos' => ($conf_ab >= $min_confidence) ? 'Lolos' : 'Tidak Lolos'
+                'lolos'      => ($conf_ab >= $min_confidence) ? 'Lolos' : 'Tidak Lolos'
             ];
 
+            // Simpan lift A->B
             $lift[] = [
-                'antecedent' => $pair['item1'],
-                'consequent' => $pair['item2'],
-                'confidence' => $conf_ab,
-                'lift' => $lift_ab,
-                'keterangan' => getLiftKeterangan($lift_ab)
-            ];
-
-            // Confidence B->A
-            $conf_ba = ($frekuensi_item2 > 0)
-                ? round(($pair['frekuensi'] / $frekuensi_item2) * 100, 2)
-                : 0;
-
-            $supportA = ($total_transaksi > 0)
-                ? ($frekuensi_item1 / $total_transaksi) * 100
-                : 0;
-
-            $lift_ba = ($supportA > 0)
-                ? round($conf_ba / $supportA, 2)
-                : 0;
-
-            $confidence[] = [
-                'antecedent' => $pair['item2'],
-                'consequent' => $pair['item1'],
-                'support' => $pair['support'],
-                'confidence' => $conf_ba,
-                'lolos' => ($conf_ba >= $min_confidence) ? 'Lolos' : 'Tidak Lolos'
-            ];
-
-            $lift[] = [
-                'antecedent' => $pair['item2'],
-                'consequent' => $pair['item1'],
-                'confidence' => $conf_ba,
-                'lift' => $lift_ba,
-                'keterangan' => getLiftKeterangan($lift_ba)
+                'antecedent'   => $pair['item1'],
+                'consequent'   => $pair['item2'],
+                'confidence'   => $conf_ab,
+                'lift'         => $lift_ab,
+                'keterangan'   => getLiftKeterangan($lift_ab)
             ];
         }
+
+        // Setelah loop, urutkan hasilnya
+        usort($confidence, function ($a, $b) {
+            return $b['confidence'] <=> $a['confidence'];
+        });
+        usort($lift, function ($a, $b) {
+            return $b['lift'] <=> $a['lift'];
+        });
 
         // Simpan log proses
         $log = [
@@ -466,65 +421,95 @@ function getLiftKeterangan($lift)
                     <?php endif; ?>
                 </tbody>
             </table>
-
+            <!-- Ganti bagian kesimpulan dengan kode berikut -->
             <div class="kesimpulan">
                 <h3>Kesimpulan</h3>
                 <?php
-                // Filter hanya aturan yang lolos confidence dan lift > 1
+                // Inisialisasi variabel untuk aturan signifikan
                 $signifikan_rules = [];
-                foreach ($confidence as $conf) {
-                    if ($conf['lolos'] == 'Lolos') {
-                        // Cari lift yang sesuai
-                        foreach ($lift as $l) {
-                            if (
-                                $l['antecedent'] === $conf['antecedent'] &&
-                                $l['consequent'] === $conf['consequent']
-                            ) {
-                                if ($l['lift'] > 1) {
-                                    $signifikan_rules[] = [
-                                        'rule' => "Jika membeli {$conf['antecedent']} maka membeli {$conf['consequent']}",
-                                        'confidence' => $conf['confidence'],
-                                        'lift' => $l['lift'],
-                                        'keterangan' => $l['keterangan']
-                                    ];
+
+                if (!empty($confidence) && !empty($lift)) {
+                    // Filter hanya aturan yang lolos confidence dan lift > 1
+                    foreach ($confidence as $conf) {
+                        if ($conf['lolos'] == 'Lolos') {
+                            // Cari lift yang sesuai
+                            foreach ($lift as $l) {
+                                if (
+                                    $l['antecedent'] === $conf['antecedent'] &&
+                                    $l['consequent'] === $conf['consequent']
+                                ) {
+                                    if ($l['lift'] > 1) {
+                                        $signifikan_rules[] = [
+                                            'rule' => "Jika membeli {$conf['antecedent']} maka membeli {$conf['consequent']}",
+                                            'antecedent' => $conf['antecedent'],
+                                            'consequent' => $conf['consequent'],
+                                            'support' => $conf['support'],
+                                            'confidence' => $conf['confidence'],
+                                            'lift' => $l['lift'],
+                                            'keterangan' => $l['keterangan']
+                                        ];
+                                    }
+                                    break;
                                 }
-                                break;
                             }
                         }
                     }
-                }
 
-                // Urutkan berdasarkan confidence tertinggi
-                usort($signifikan_rules, function ($a, $b) {
-                    return $b['confidence'] <=> $a['confidence'];
-                });
+                    // Urutkan berdasarkan confidence tertinggi
+                    usort($signifikan_rules, function ($a, $b) {
+                        return $b['confidence'] <=> $a['confidence'];
+                    });
+                }
                 ?>
 
                 <?php if (!empty($signifikan_rules)): ?>
                     <p>Aturan asosiasi signifikan (confidence ≥ <?= $min_confidence ?>% dan lift > 1):</p>
-                    <ul>
-                        <?php foreach ($signifikan_rules as $rule): ?>
-                            <li>
-                                <?= $rule['rule'] ?>
-                                <ul>
-                                    <li>Confidence: <?= $rule['confidence'] ?>%</li>
-                                    <li>Lift Ratio: <?= $rule['lift'] ?> (<?= $rule['keterangan'] ?>)</li>
-                                </ul>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                    <p><strong>Interpretasi:</strong> Semakin tinggi nilai confidence, semakin kuat hubungan antar barang.
-                        Lift > 1 menunjukkan hubungan positif (pembelian barang A meningkatkan kemungkinan pembelian barang B).</p>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Aturan Asosiasi</th>
+                                <th>Support (%)</th>
+                                <th>Confidence (%)</th>
+                                <th>Lift Ratio</th>
+                                <th>Keterangan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php $no = 1; ?>
+                            <?php foreach ($signifikan_rules as $rule): ?>
+                                <tr>
+                                    <td><?= $no++ ?></td>
+                                    <td>Jika membeli <?= htmlspecialchars($rule['antecedent']) ?> maka membeli <?= htmlspecialchars($rule['consequent']) ?></td>
+                                    <td><?= $rule['support'] ?></td>
+                                    <td><?= $rule['confidence'] ?></td>
+                                    <td><?= $rule['lift'] ?></td>
+                                    <td><?= $rule['keterangan'] ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+
+                    <p><strong>Interpretasi Hasil:</strong></p>
+                    <ol>
+                        <li>Aturan asosiasi terkuat adalah <strong>"Jika membeli <?= htmlspecialchars($signifikan_rules[0]['antecedent']) ?> maka membeli <?= htmlspecialchars($signifikan_rules[0]['consequent']) ?>"</strong> dengan confidence <?= $signifikan_rules[0]['confidence'] ?>% dan lift ratio <?= $signifikan_rules[0]['lift'] ?>.</li>
+                        <li>Semakin tinggi nilai confidence, semakin kuat hubungan sebab-akibat antar barang.</li>
+                        <li>Lift ratio > 1 menunjukkan hubungan positif - pembelian barang pertama meningkatkan kemungkinan pembelian barang kedua.</li>
+                        <li>Aturan ini dapat digunakan untuk strategi penjualan seperti bundling produk atau penataan produk berdekatan.</li>
+                    </ol>
                 <?php else: ?>
-                    <p>Tidak ditemukan aturan asosiasi yang signifikan berdasarkan parameter yang ditentukan.</p>
-                    <p>Mungkin disebabkan oleh:
-                    <ul>
-                        <li>Min. confidence terlalu tinggi</li>
-                        <li>Min. support terlalu tinggi</li>
-                        <li>Data transaksi terlalu sedikit</li>
-                    </ul>
-                    </p>
+                    <p><strong>Tidak Ditemukan Aturan Asosiasi Signifikan</strong></p>
+                    <p>Berdasarkan parameter yang ditetapkan, tidak ditemukan aturan asosiasi yang memenuhi kriteria signifikansi (confidence ≥ <?= $min_confidence ?>% dan lift > 1).</p>
+                    <p><strong>Rekomendasi:</strong></p>
+                    <ol>
+                        <li>Turunkan nilai minimum support dan/atau confidence</li>
+                        <li>Perluas rentang waktu transaksi yang dianalisis</li>
+                        <li>Perbanyak data transaksi yang dianalisis</li>
+                    </ol>
                 <?php endif; ?>
+
+                <p><strong>Kesimpulan Umum:</strong></p>
+                <p>Berdasarkan analisis asosiasi dengan algoritma Apriori pada <?= $log['total_transaksi'] ?> transaksi, ditemukan <?= count($signifikan_rules) ?> aturan signifikan yang dapat dijadikan acuan pengambilan keputusan bisnis.</p>
             </div>
         <?php endif; ?>
     </div>
