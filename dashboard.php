@@ -130,10 +130,13 @@ try {
 
 // Hitung total pendapatan
 $total_pendapatan = 0;
+$total_pendapatan = 0;
 try {
     $query = "
-        SELECT SUM(total_harga) AS total_pendapatan 
-        FROM detail_transaksi
+        SELECT SUM(dt.total_harga) AS total_pendapatan 
+        FROM detail_transaksi dt
+        JOIN transaksi t ON dt.id_transaksi = t.id_transaksi
+        WHERE t.tanggal_transaksi >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
     ";
     $stmt = $pdo->query($query);
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -204,7 +207,7 @@ try {
                 <div class="card-icon pendapatan">
                     <i class="fas fa-money-bill-wave"></i>
                 </div>
-                <h3>TOTAL PENDAPATAN</h3>
+                <h3>TOTAL PENDAPATAN 6 BULAN TERAKHIR</h3>
                 <div class="value">Rp <?= number_format($total_pendapatan, 0, ',', '.') ?></div>
                 <div class="value-info">
                     <i class="fas fa-chart-line"></i> Seluruh periode
