@@ -356,8 +356,8 @@ function getLiftKeterangan($lift)
                 <thead>
                     <tr>
                         <th>No</th>
-                        <th>Antecedent</th>
-                        <th>Consequent</th>
+                        <th>Item 1</th>
+                        <th>Item 2</th>
                         <th>Support (%)</th>
                         <th>Confidence (%)</th>
                         <th>Keterangan</th>
@@ -394,8 +394,8 @@ function getLiftKeterangan($lift)
                 <thead>
                     <tr>
                         <th>No</th>
-                        <th>Antecedent</th>
-                        <th>Consequent</th>
+                        <th>Item 1</th>
+                        <th>Item 2</th>
                         <th>Confidence (%)</th>
                         <th>Lift Ratio</th>
                         <th>Keterangan</th>
@@ -459,6 +459,29 @@ function getLiftKeterangan($lift)
                     usort($signifikan_rules, function ($a, $b) {
                         return $b['confidence'] <=> $a['confidence'];
                     });
+
+                    // ==============================
+                    $json_aturan = json_encode($signifikan_rules);
+                    $total_signifikan = count($signifikan_rules);
+
+                    $stmt = $pdo->prepare("INSERT INTO proses_apriori 
+                              (tanggal_awal, tanggal_akhir, min_support, min_confidence, total_transaksi, total_aturan_signifikan, aturan_signifikan) 
+                              VALUES (?, ?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([
+                        $tanggal_awal,
+                        $tanggal_akhir,
+                        $min_support,
+                        $min_confidence,
+                        $total_transaksi,
+                        $total_signifikan,
+                        $json_aturan
+                    ]);
+
+                    $id_proses = $pdo->lastInsertId();
+
+                    // Set message untuk ditampilkan
+                    $_SESSION['message'] = "Proses apriori berhasil disimpan (ID: $id_proses)";
+                    $message = $_SESSION['message']; // agar pesan langsung muncul
                 }
                 ?>
 
@@ -513,6 +536,10 @@ function getLiftKeterangan($lift)
             </div>
         <?php endif; ?>
     </div>
+
+
+
+
 </body>
 
 </html>

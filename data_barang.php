@@ -198,8 +198,8 @@ $barang = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <?php foreach ($barang as $b): ?>
                     <tr>
                         <td><?= htmlspecialchars($b['id_barang']) ?></td>
-                        <td><?= htmlspecialchars($b['nama_barang']) ?></td>
-                        <td><?= htmlspecialchars($b['kategori']) ?></td>
+                        <td><?= htmlspecialchars(strtoupper($b['nama_barang'])) ?></td>
+                        <td><?= htmlspecialchars(strtoupper($b['kategori'])) ?></td>
                         <td>Rp <?= number_format($b['harga'], 2, ',', '.') ?></td>
                         <td>
                             <div class="action-buttons">

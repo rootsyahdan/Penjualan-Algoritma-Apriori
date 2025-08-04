@@ -11,7 +11,7 @@ CREATE TABLE barang (
 
 -- 2. Tabel Transaksi
 CREATE TABLE transaksi (
-  id_transaksi INT AUTO_INCREMENT PRIMARY KEY,
+     INT AUTO_INCREMENT PRIMARY KEY,
   tanggal_transaksi DATE NOT NULL
 );
 
@@ -151,3 +151,19 @@ INSERT INTO detail_transaksi (id_transaksi, id_barang, qty, total_harga) VALUES
 (48, 6,1,212500.00),(48, 7,1,212500.00),
 (49, 6,1,212500.00),(49, 8,1,212500.00),
 (50, 7,1,212500.00),(50, 8,1,212500.00);
+
+
+-- Tambahkan di bagian akhir db.sql
+USE penjualan_apriori;
+
+CREATE TABLE IF NOT EXISTS proses_apriori (
+  id_proses INT AUTO_INCREMENT PRIMARY KEY,
+  tanggal_proses TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  tanggal_awal DATE NOT NULL,
+  tanggal_akhir DATE NOT NULL,
+  min_support DECIMAL(5,2) NOT NULL,
+  min_confidence DECIMAL(5,2) NOT NULL,
+  total_transaksi INT NOT NULL,
+  total_aturan_signifikan INT NOT NULL,
+  aturan_signifikan JSON NOT NULL
+);
