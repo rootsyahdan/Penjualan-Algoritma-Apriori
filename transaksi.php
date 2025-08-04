@@ -53,6 +53,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $_SESSION['message'] = "Transaksi berhasil dihapus!";
                 break;
+
+            case 'update_transaksi':
+                $stmt = $pdo->prepare("DELETE FROM detail_transaksi WHERE id_transaksi = ?");
+                $stmt->execute([$id_transaksi]);
+
+                // Insert new transaction details
+                if (!empty($_POST['barang'])) {
+                    foreach ($_POST['barang'] as $index => $id_barang) {
+                        $qty = $_POST['qty'][$index];
+
+                        // Get item price
+                        $stmt = $pdo->prepare("SELECT harga FROM barang WHERE id_barang = ?");
+                        $stmt->execute([$id_barang]);
+                        $harga = $stmt->fetchColumn();
+
+                        $total_harga = $harga * $qty;
+
+                        $stmt = $pdo->prepare("INSERT INTO detail_transaksi 
+                                            (id_transaksi, id_barang, qty, total_harga) 
+                                            VALUES (?, ?, ?, ?)");
+                        $stmt->execute([$id_transaksi, $id_barang, $qty, $total_harga]);
+                    }
+                }
+
+                $_SESSION['message'] = "Transaksi berhasil diupdate!";
+                break;
         }
     } catch (PDOException $e) {
         $_SESSION['message'] = "Error: " . $e->getMessage();
@@ -60,7 +86,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header("Location: transaksi.php");
     exit();
 }
-
 
 $perPage = 7;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -106,6 +131,29 @@ $transaksi = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Get item data for dropdown
 $barang = $pdo->query("SELECT * FROM barang")->fetchAll(PDO::FETCH_ASSOC);
+
+// Get transaction data for editing
+$edit_data = [];
+if (isset($_GET['edit'])) {
+    $id_edit = $_GET['edit'];
+
+    // Get transaction data
+    $stmt = $pdo->prepare("SELECT * FROM transaksi WHERE id_transaksi = ?");
+    $stmt->execute([$id_edit]);
+    $edit_transaksi = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // Get transaction details
+    $stmt = $pdo->prepare("SELECT d.id_barang, d.qty 
+                           FROM detail_transaksi d 
+                           WHERE d.id_transaksi = ?");
+    $stmt->execute([$id_edit]);
+    $edit_detail = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $edit_data = [
+        'transaksi' => $edit_transaksi,
+        'detail' => $edit_detail
+    ];
+}
 ?>
 
 <?php include 'components/navbar.php'; ?>
@@ -144,13 +192,35 @@ $barang = $pdo->query("SELECT * FROM barang")->fetchAll(PDO::FETCH_ASSOC);
             `;
             container.appendChild(newRow);
         }
+
+        // Initialize form with edit data
+        window.onload = function() {
+            <?php if (!empty($edit_data)): ?>
+                // Clear existing items except the first one
+                const container = document.getElementById('barang-container');
+                while (container.children.length > 1) {
+                    container.removeChild(container.lastChild);
+                }
+
+                // Add items from edit data
+                <?php foreach ($edit_data['detail'] as $index => $detail): ?>
+                    <?php if ($index > 0): ?>
+                        tambahBarang();
+                    <?php endif; ?>
+
+                    // Set values for each row
+                    const row = container.children[<?= $index ?>];
+                    row.querySelector('select[name="barang[]"]').value = '<?= $detail['id_barang'] ?>';
+                    row.querySelector('input[name="qty[]"]').value = '<?= $detail['qty'] ?>';
+                <?php endforeach; ?>
+            <?php endif; ?>
+        };
     </script>
 </head>
 
 <body>
     <div class="main-content">
         <h1 class="fas fa-shopping-cart"> Data Transaksi</h1>
-
 
         <?php if ($message): ?>
             <div class="alert <?= strpos($message, 'berhasil') !== false ? 'alert-success' : 'alert-danger' ?>">
@@ -168,15 +238,18 @@ $barang = $pdo->query("SELECT * FROM barang")->fetchAll(PDO::FETCH_ASSOC);
 
         <!-- Transaction Form -->
         <form method="POST" class="form-container">
-            <input type="hidden" name="action" value="tambah_transaksi">
-            <h3>Tanggal Transaksi</h3>
+            <input type="hidden" name="action" value="<?= !empty($edit_data) ? 'update_transaksi' : 'tambah_transaksi' ?>">
+            <?php if (!empty($edit_data)): ?>
+                <input type="hidden" name="id_transaksi" value="<?= $edit_data['transaksi']['id_transaksi'] ?>">
+            <?php endif; ?>
 
+            <h3>Tanggal Transaksi</h3>
             <div class="form-row">
                 <div class="form-group">
-                    <input type="date" name="tanggal_transaksi" required value="<?= date('Y-m-d') ?>">
+                    <input type="date" name="tanggal_transaksi" required
+                        value="<?= !empty($edit_data) ? htmlspecialchars($edit_data['transaksi']['tanggal_transaksi']) : date('Y-m-d') ?>">
                 </div>
             </div>
-
 
             <div class="form-group grid-full">
                 <div id="barang-container">
@@ -209,11 +282,18 @@ $barang = $pdo->query("SELECT * FROM barang")->fetchAll(PDO::FETCH_ASSOC);
 
             <div class="button-group grid-full">
                 <button type="submit" class="button button-primary">
-                    <i class="fas fa-save"></i> Simpan Transaksi
+                    <i class="fas fa-save"></i>
+                    <?= !empty($edit_data) ? 'Update Transaksi' : 'Simpan Transaksi' ?>
                 </button>
-                <button type="reset" class="button button-secondary">
-                    <i class="fas fa-undo"></i> Reset
-                </button>
+                <?php if (!empty($edit_data)): ?>
+                    <a href="transaksi.php" class="button button-secondary">
+                        <i class="fas fa-times"></i> Batal
+                    </a>
+                <?php else: ?>
+                    <button type="reset" class="button button-secondary">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
+                <?php endif; ?>
             </div>
         </form>
 
@@ -248,6 +328,10 @@ $barang = $pdo->query("SELECT * FROM barang")->fetchAll(PDO::FETCH_ASSOC);
                         <td>Rp <?= number_format($t['total'], 2, ',', '.') ?></td>
                         <td>
                             <div class="action-buttons">
+                                <a href="transaksi.php?edit=<?= $t['id_transaksi'] ?>"
+                                    class="button button-warning">
+                                    <i class="fas fa-edit"></i>
+                                </a>
                                 <form method="POST" onsubmit="return confirm('Hapus transaksi ini?')">
                                     <input type="hidden" name="action" value="hapus_transaksi">
                                     <input type="hidden" name="id_transaksi" value="<?= $t['id_transaksi'] ?>">
@@ -304,6 +388,52 @@ $barang = $pdo->query("SELECT * FROM barang")->fetchAll(PDO::FETCH_ASSOC);
             </div>
         <?php endif; ?>
     </div>
+    <script>
+        function tambahBarang(id_barang = '', qty = 1) {
+            const container = document.getElementById('barang-container');
+            const newRow = document.createElement('div');
+            newRow.className = 'form-row';
+            newRow.innerHTML = `
+            <div class="form-group">
+                <select name="barang[]" required>
+                    <option value="">Pilih Barang</option>
+                    <?php foreach ($barang as $b): ?>
+                        <option value="<?= $b['id_barang'] ?>"><?= htmlspecialchars($b['nama_barang']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="form-group">
+                <input type="number" name="qty[]" min="1" value="${qty}" placeholder="Qty" required>
+            </div>
+            <div class="form-group">
+                <button type="button" class="button button-danger" onclick="this.parentElement.parentElement.remove()">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+            container.appendChild(newRow);
+
+            // Set nilai jika ada parameter
+            if (id_barang) {
+                newRow.querySelector('select[name="barang[]"]').value = id_barang;
+            }
+        }
+
+        // Initialize form with edit data
+        window.onload = function() {
+            <?php if (!empty($edit_data)): ?>
+                // Clear existing items
+                const container = document.getElementById('barang-container');
+                container.innerHTML = '';
+
+                // Add items from edit data
+                <?php foreach ($edit_data['detail'] as $detail): ?>
+                    tambahBarang('<?= $detail['id_barang'] ?>', <?= $detail['qty'] ?>);
+                <?php endforeach; ?>
+            <?php endif; ?>
+        };
+    </script>
+
 </body>
 
 </html>

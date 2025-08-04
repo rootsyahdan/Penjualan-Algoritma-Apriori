@@ -327,3 +327,14 @@ h1 {
     font-size: 14px;
   }
 }
+
+/* Tambahkan di bagian Button Styles */
+.button-warning {
+  background: #f39c12;
+  color: white;
+}
+
+.button-warning:hover {
+  background: #e67e22;
+  transform: translateY(-2px);
+}
